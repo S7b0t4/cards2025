@@ -1,0 +1,28 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Копируем package.json и package-lock.json
+COPY package*.json ./
+
+# Устанавливаем зависимости
+RUN npm ci
+
+# Копируем конфигурационные файлы
+COPY next.config.js tsconfig.json ./
+
+# Открываем порт
+EXPOSE 3003
+
+# Устанавливаем переменную окружения для порта
+ENV PORT=3003
+
+# Запускаем в dev режиме (код будет монтироваться через volume)
+CMD ["npm", "run", "dev"]
+
+
+
+
+
+
+

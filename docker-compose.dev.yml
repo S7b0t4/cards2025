@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: backend_app
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: mydb
+      PORT: 3002
+      NODE_ENV: development
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3003}
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/package.json:/app/package.json:ro
+      - ./backend/tsconfig.json:/app/tsconfig.json:ro
+      - ./backend/nest-cli.json:/app/nest-cli.json:ro
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend_app
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3002}
+      NEXT_PUBLIC_TELEGRAM_BOT_NAME: S7b0t4bot
+      PORT: 3003
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./frontend/app:/app/app:ro
+      - ./frontend/public:/app/public
+      - ./frontend/next.config.js:/app/next.config.js:ro
+      - ./frontend/package.json:/app/package.json:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: npm run dev
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_next:
+

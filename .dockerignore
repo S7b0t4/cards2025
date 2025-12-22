@@ -1,0 +1,17 @@
+node_modules
+.git
+.gitignore
+*.md
+.env
+.env.local
+.next
+dist
+coverage
+.nyc_output
+
+
+
+
+
+
+
