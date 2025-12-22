@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_app
+    env_file:
+      - backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: mydb
+      PORT: 3002
+      NODE_ENV: production
+      ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-https://cards.sybota.space}
+      # TELEGRAM_BOT_TOKEN и SKIP_TELEGRAM_HASH_CHECK загружаются из backend/.env
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    # Для разработки раскомментируйте volumes и измените command
+    # volumes:
+    #   - ./backend/src:/app/src
+    #   - /app/node_modules
+    # command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_app
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://cards.sybota.space}
+      NEXT_PUBLIC_TELEGRAM_BOT_NAME: ${NEXT_PUBLIC_TELEGRAM_BOT_NAME:-S7b0t4bot}
+      PORT: 3003
+    ports:
+      - "3003:3003"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  portfolio:
+    build:
+      context: ./portfolio
+      dockerfile: Dockerfile
+    container_name: portfolio_app
+    environment:
+      PORT: 3004
+    ports:
+      - "3004:3004"
+    networks:
+      - app-network
+    restart: unless-stopped
+    # Для разработки раскомментируйте volumes и измените command
+    # volumes:
+    #   - ./frontend/app:/app/app
+    #   - ./frontend/public:/app/public
+    #   - ./frontend/next.config.js:/app/next.config.js
+    #   - /app/node_modules
+    #   - /app/.next
+    # command: npm run dev
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+

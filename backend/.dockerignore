@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+*.md
+coverage
+.nyc_output
+.vscode
+.idea
+
+
+
+
+
+
+
