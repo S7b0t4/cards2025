@@ -8,6 +8,8 @@ const downloadProgress = { total: 0, completed: 0, failed: 0, active: 0 };
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Telegraph Image Parser] installed');
+  // Отключаем полку загрузок для автоматического скачивания без диалогов
+  chrome.downloads.setShelfEnabled(false);
 });
 
 // Отслеживаем статус скачиваний
@@ -95,7 +97,7 @@ function downloadImageWithRetry(url, filename, expectedSize, attempt = 1, maxAtt
       url: url,
       filename: filename,
       conflictAction: 'uniquify',
-      saveAs: false,
+      saveAs: false, // Не показывать диалог сохранения
     },
     (downloadId) => {
       if (chrome.runtime.lastError) {
@@ -129,6 +131,9 @@ function downloadImageWithRetry(url, filename, expectedSize, attempt = 1, maxAtt
 
 // Параллельное скачивание с ограничением количества одновременных загрузок
 async function downloadImagesParallel(images, folder, maxConcurrent = 5) {
+  // Отключаем полку загрузок перед началом массового скачивания
+  chrome.downloads.setShelfEnabled(false);
+  
   downloadProgress.total = images.length;
   downloadProgress.completed = 0;
   downloadProgress.failed = 0;
@@ -163,12 +168,15 @@ async function downloadImagesParallel(images, folder, maxConcurrent = 5) {
     };
   });
 
-  // Запускаем задачи батчами по maxConcurrent
-  for (let i = 0; i < tasks.length; i += maxConcurrent) {
-    const batch = tasks.slice(i, i + maxConcurrent);
-    await Promise.all(batch.map(task => task()));
+    // Запускаем задачи батчами по maxConcurrent
+    for (let i = 0; i < tasks.length; i += maxConcurrent) {
+      const batch = tasks.slice(i, i + maxConcurrent);
+      await Promise.all(batch.map(task => task()));
+    }
+    
+    // Включаем полку загрузок обратно после завершения
+    chrome.downloads.setShelfEnabled(true);
   }
-}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'saveParsedImages') {
@@ -225,7 +233,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return cleaned || 'telegraph_images';
     };
 
-    const folder = sanitizeTitle(data.title);
+    // Используем сохраненную папку или создаем из заголовка
+    chrome.storage.local.get(['savedDownloadFolder'], (result) => {
+      const folder = result.savedDownloadFolder || sanitizeTitle(data.title);
+      
+      // Параллельное скачивание (до 5 одновременно)
+      (async () => {
+        try {
+          await downloadImagesParallel(data.images, folder, 5);
+
+          sendResponse({ 
+            success: true, 
+            count: data.images.length, 
+            folder,
+            message: `Запущено параллельное скачивание ${data.images.length} картинок в папку "${folder}". Проверьте папку загрузок браузера.`
+          });
+        } catch (e) {
+          sendResponse({ success: false, error: e.message });
+        }
+      })();
+    });
+    
+    return true;
 
     // Параллельное скачивание (до 5 одновременно)
     (async () => {

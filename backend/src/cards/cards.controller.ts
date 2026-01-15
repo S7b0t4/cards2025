@@ -46,10 +46,17 @@ export class CardsController {
   @Get()
   @ApiOperation({ summary: 'Get all user cards' })
   @ApiResponse({ status: 200, description: 'Returns all cards for the user' })
-  findAll(@Request() req: any, @Query('group') group?: string) {
-    this.logger.log(`GET /cards - User ID: ${req.user?.id}, Group: ${group || 'all'}`);
+  findAll(
+    @Request() req: any,
+    @Query('group') group?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    const offsetNum = offset ? parseInt(offset, 10) : undefined;
+    this.logger.log(`GET /cards - User ID: ${req.user?.id}, Group: ${group || 'all'}, Limit: ${limitNum || 'all'}, Offset: ${offsetNum || 0}`);
     try {
-      return this.cardsService.findAll(req.user.id, group);
+      return this.cardsService.findAll(req.user.id, group, limitNum, offsetNum);
     } catch (error) {
       this.logger.error(`GET /cards - Error: ${error.message}`, error.stack);
       throw error;

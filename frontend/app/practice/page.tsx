@@ -738,11 +738,15 @@ export default function PracticePage() {
                 : '4px solid #667eea',
               background: showAnswerResult
                 ? (isAnswerCorrect ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)')
-                : 'linear-gradient(135deg, var(--bg-secondary) 0%, #2d2d3a 100%)',
+                : typeof window !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark'
+                  ? 'linear-gradient(135deg, var(--bg-secondary) 0%, #2d2d3a 100%)'
+                  : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
               transition: 'all 0.3s ease',
               boxShadow: showAnswerResult
                 ? (isAnswerCorrect ? '0 12px 32px rgba(76, 175, 80, 0.3)' : '0 12px 32px rgba(244, 67, 54, 0.3)')
-                : '0 12px 32px rgba(102, 126, 234, 0.25)',
+                : typeof window !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark'
+                  ? '0 12px 32px rgba(102, 126, 234, 0.25)'
+                  : '0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04)',
               // Optimize rendering for low-memory devices
               willChange: showAnswerResult ? 'auto' : 'transform',
               contain: 'layout style paint',
@@ -763,10 +767,10 @@ export default function PracticePage() {
               fontWeight: '800',
               marginBottom: '1.5rem',
               textAlign: 'center',
-              color: '#ffffff',
+              color: typeof window !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark' ? '#ffffff' : '#1a1a1a',
               lineHeight: '1.3',
               wordBreak: 'break-word',
-              textShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              textShadow: typeof window !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark' ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 2px 4px rgba(0, 0, 0, 0.05)',
               padding: '0 1rem',
             }}>
               {currentCard.russianWord}

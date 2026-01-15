@@ -145,6 +145,23 @@ a {
   transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Улучшенные стили для карточек в светлой теме */
+:root .card {
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+:root .card:hover {
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
 .btn {
   padding: 0.5rem 1rem;
   border: none;
@@ -356,16 +373,26 @@ a {
   position: relative;
   overflow: hidden;
   border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
   /* Optimize for memory-constrained devices */
   contain: layout style paint;
   transform-style: preserve-3d;
   backface-visibility: hidden;
 }
 
-.practice-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+/* Стили для светлой темы */
+:root .practice-card {
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+:root .practice-card:hover {
+  box-shadow: 
+    0 6px 16px rgba(0, 0, 0, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
 
@@ -417,6 +444,17 @@ a {
   color: #ffffff;
   line-height: 1.2;
   word-break: break-word;
+}
+
+/* Цвет текста для светлой темы */
+:root .practice-card .card-word {
+  color: #1a1a1a;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .practice-card .card-word {
+  color: #ffffff;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .card-label {
