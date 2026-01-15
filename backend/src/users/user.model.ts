@@ -42,6 +42,14 @@ export class User extends Model<User> {
   })
   telegramId?: number;
 
+  @ApiProperty({ example: 150, description: 'User points/score' })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  points: number;
+
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Created at' })
   @CreatedAt
   @Column({ field: 'created_at' })

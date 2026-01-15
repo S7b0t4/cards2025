@@ -26,6 +26,63 @@ html, body {
     min-height: 100dvh; /* Dynamic viewport height for mobile */
     overflow-y: auto;
   }
+
+  /* Улучшение формы для мобильных */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-group input {
+    min-height: 52px;
+  }
+
+  .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .form-group select {
+    min-height: 52px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 3rem;
+  }
+
+  [data-theme='dark'] .form-group select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e0e0e0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  }
 }
 
 #__next {
@@ -224,22 +281,7 @@ a {
   }
 }
 
-.practice-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.practice-header h1 {
-  font-size: 1.5rem;
-  margin: 0;
-}
-
-.practice-counter {
-  color: var(--text-secondary);
-  font-size: 1rem;
-}
+/* Header removed - no longer needed */
 
 .progress-bar-container {
   margin-bottom: 1.5rem;
@@ -316,6 +358,10 @@ a {
   border-radius: 20px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  /* Optimize for memory-constrained devices */
+  contain: layout style paint;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
 }
 
 .practice-card:hover {
@@ -351,25 +397,30 @@ a {
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .practice-card .card-inner.flipped {
   transform: rotateY(180deg);
 }
 
+.practice-card.exiting-left,
+.practice-card.exiting-right {
+  z-index: 10;
+}
+
 .card-word {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1rem;
   text-align: center;
-  color: var(--text-primary);
+  color: #ffffff;
   line-height: 1.2;
   word-break: break-word;
 }
 
 .card-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   margin-bottom: 1rem;
   text-transform: uppercase;
@@ -378,7 +429,7 @@ a {
 }
 
 .card-description {
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
   text-align: center;
   margin-top: 1rem;
@@ -452,6 +503,9 @@ a {
     padding-bottom: 80px; /* Space for fixed footer */
     overflow-y: visible;
     position: relative;
+    /* Предотвращаем смещение при открытии клавиатуры */
+    scroll-padding-top: 1rem;
+    scroll-behavior: smooth;
   }
 
   .practice-footer {
@@ -466,6 +520,21 @@ a {
     z-index: 100;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     background: var(--bg-primary);
+  }
+
+  /* Предотвращаем смещение карточки при открытии клавиатуры */
+  .practice-card {
+    position: relative;
+    /* Сохраняем позицию карточки при изменении viewport */
+    scroll-margin-top: 1rem;
+  }
+
+  /* Для режима ввода текста - карточка не должна смещаться вниз */
+  input[type="text"]:focus + .practice-card,
+  .practice-card:has(+ input[type="text"]:focus) {
+    position: sticky;
+    top: 1rem;
+    z-index: 10;
   }
 
   .practice-header h1 {
@@ -487,6 +556,18 @@ a {
     border-radius: 16px;
   }
 
+  /* Карточка остается на месте при открытии клавиатуры в режиме ввода */
+  .practice-card.typing-mode-card {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+  }
+
+  /* Предотвращаем прокрутку контейнера при открытии клавиатуры */
+  .practice-container {
+    scroll-padding-top: 0.5rem;
+  }
+
   .practice-buttons {
     flex-direction: column;
     gap: 0.75rem;
@@ -499,11 +580,11 @@ a {
   }
 
   .card-word {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
   .card-description {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
   }
 
   .swipe-hint {
@@ -522,12 +603,56 @@ a {
   .card {
     padding: 1rem;
   }
+
+  /* Ensure "Далее" button is always visible on mobile */
+  .practice-next-button-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+
+  .practice-next-button {
+    width: 100% !important;
+    min-height: 64px !important;
+    font-size: 1.3rem !important;
+    padding: 1.5rem 2rem !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Ensure "Далее" button is visible on all screen sizes, including 485px */
+@media (min-width: 481px) and (max-width: 768px) {
+  .practice-next-button-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+
+  .practice-container {
+    padding-bottom: 140px !important;
+  }
 }
 
 @media (max-width: 480px) {
   .practice-container {
     padding: 0.25rem;
     padding-bottom: 75px; /* Space for fixed footer on small phones */
+    /* Предотвращаем прокрутку при открытии клавиатуры */
+    scroll-padding-top: 0.5rem;
   }
 
   .practice-footer {
@@ -545,7 +670,25 @@ a {
   }
 
   .card-word {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+  }
+
+  /* Карточка остается на месте при открытии клавиатуры */
+  .practice-card.typing-mode-card {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+  }
+}
+
+/* Optimize for low-memory devices - reduce 3D transforms */
+@media (max-width: 480px) and (max-height: 800px) {
+  .practice-card {
+    perspective: 500px; /* Reduced from 1000px */
+  }
+  
+  .practice-card .card-inner {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* Slightly slower but smoother */
   }
 }
 
@@ -565,7 +708,7 @@ a {
 .home-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: 1rem;
   flex-shrink: 0;
 }
@@ -595,28 +738,78 @@ a {
   font-weight: 700;
 }
 
-.active-days-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 16px;
+.points-badge {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.875rem 1.25rem;
+  border-radius: 12px;
   text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-width: 100px;
+  border: 2px solid #10b981;
+  transition: all 0.2s ease;
 }
 
-.active-days-number {
-  font-size: 2rem;
+.points-badge:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transform: translateY(-1px);
+}
+
+.points-number {
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 0.25rem;
+  color: #10b981;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.points-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.active-days-badge {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.875rem 1.25rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  min-width: 100px;
+  border: 2px solid #667eea;
+  transition: all 0.2s ease;
+}
+
+.active-days-badge:hover {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+.active-days-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .active-days-label {
   font-size: 0.75rem;
-  opacity: 0.9;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
 .stats-grid {
@@ -666,12 +859,20 @@ a {
 
 .home-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.75rem;
   padding: 1rem;
   flex-shrink: 0;
   background: var(--bg-secondary);
   border-top: none;
   transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.home-actions-left {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
 }
 
 /* Mobile: fix buttons at bottom for one-hand use */
@@ -695,7 +896,6 @@ a {
 }
 
 .btn-action {
-  flex: 1;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -709,6 +909,16 @@ a {
   justify-content: center;
   min-height: 60px;
   color: var(--text-primary);
+}
+
+.home-actions-left .btn-action {
+  flex: 1;
+}
+
+.btn-action-add {
+  flex-shrink: 0;
+  min-width: 60px;
+  width: 60px;
 }
 
 .btn-action:hover {
@@ -797,6 +1007,65 @@ a {
 
   .home-header {
     padding: 0.75rem;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .home-header > div:last-child {
+    position: static !important;
+    transform: none !important;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .home-header {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .home-header > div:last-child {
+    gap: 0.3rem;
+  }
+
+  .points-badge,
+  .active-days-badge {
+    padding: 0.4rem 0.5rem;
+    min-width: 55px;
+  }
+
+  .points-number,
+  .active-days-number {
+    font-size: 1rem;
+  }
+
+  .points-label,
+  .active-days-label {
+    font-size: 0.55rem;
+  }
+
+  .home-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .home-title {
+    font-size: 1.25rem;
+  }
+
+  .points-badge,
+  .active-days-badge {
+    padding: 0.5rem 0.75rem;
+    min-width: 70px;
+  }
+
+  .points-number,
+  .active-days-number {
+    font-size: 1.25rem;
+  }
+
+  .points-label,
+  .active-days-label {
+    font-size: 0.65rem;
   }
 
   .home-logo {
@@ -805,6 +1074,28 @@ a {
   }
 
   .home-title {
+    font-size: 1.5rem;
+  }
+
+  .points-badge {
+    padding: 0.75rem 1rem;
+    min-width: 85px;
+  }
+
+  .points-number {
+    font-size: 1.5rem;
+  }
+
+  .points-label {
+    font-size: 0.7rem;
+  }
+
+  .active-days-badge {
+    padding: 0.75rem 1rem;
+    min-width: 85px;
+  }
+
+  .active-days-number {
     font-size: 1.5rem;
   }
 

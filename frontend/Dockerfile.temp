@@ -1,0 +1,18 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+# Используем сохраненный builder образ
+COPY --from=frontend-builder:temp /app/.next ./.next
+COPY --from=frontend-builder:temp /app/package.json ./package.json
+COPY --from=frontend-builder:temp /app/public ./public
+EXPOSE 3003
+ENV PORT=3003
+CMD ["npm", "start"]

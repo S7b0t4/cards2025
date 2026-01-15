@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiClient from '../lib/axios-config'
 import styles from './cards.module.css'
@@ -11,6 +11,7 @@ interface Card {
   englishWord: string
   russianDescription?: string
   englishDescription?: string
+  groupName?: string
   createdAt: string
 }
 
@@ -23,19 +24,27 @@ function CardsPageContent() {
   const [showForm, setShowForm] = useState(false)
   const [showDescriptions, setShowDescriptions] = useState(false)
   const [editingCard, setEditingCard] = useState<Card | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<string>('Мои карточки')
+  const [groups, setGroups] = useState<string[]>(['Мои карточки'])
+  const [submitting, setSubmitting] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     russianWord: '',
     englishWord: '',
     russianDescription: '',
     englishDescription: '',
+    groupName: 'Мои карточки',
   })
   // Swipe state for each card
   const [swipeStates, setSwipeStates] = useState<Record<number, { touchStart: number | null; swipeOffset: number }>>({})
+  // Ref for English input to focus on form open
+  const englishInputRef = useRef<HTMLInputElement | null>(null)
 
-  const fetchCards = async () => {
+  const fetchCards = async (group?: string) => {
     try {
-      console.log('[CARDS PAGE] Fetching cards...');
-      const response = await apiClient.get('/api/cards');
+      console.log('[CARDS PAGE] Fetching cards...', group ? `Group: ${group}` : 'All groups');
+      const url = group ? `/api/cards?group=${encodeURIComponent(group)}` : '/api/cards';
+      const response = await apiClient.get(url);
       console.log('[CARDS PAGE] Cards fetched successfully:', response.data);
       setCards(response.data);
     } catch (err: any) {
@@ -56,6 +65,21 @@ function CardsPageContent() {
     }
   }
 
+  const fetchGroups = async () => {
+    try {
+      const response = await apiClient.get('/api/cards/groups');
+      console.log('[CARDS PAGE] Groups fetched:', response.data);
+      if (response.data && response.data.length > 0) {
+        setGroups(response.data);
+        if (!response.data.includes(selectedGroup)) {
+          setSelectedGroup(response.data[0]);
+        }
+      }
+    } catch (err: any) {
+      console.error('[CARDS PAGE] Error fetching groups:', err);
+    }
+  }
+
   useEffect(() => {
     try {
       const token = localStorage.getItem('token')
@@ -68,7 +92,9 @@ function CardsPageContent() {
       if (shouldOpenForm) {
         setShowForm(true)
       }
-      fetchCards()
+      fetchGroups().then(() => {
+        fetchCards(selectedGroup)
+      })
     } catch (err) {
       console.error('[CARDS PAGE] Error in useEffect:', err)
       setError('Произошла ошибка при загрузке страницы')
@@ -77,15 +103,33 @@ function CardsPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (selectedGroup) {
+      fetchCards(selectedGroup)
+    }
+  }, [selectedGroup])
+
+  // Focus English input when form opens
+  useEffect(() => {
+    if ((showForm || editingCard) && englishInputRef.current) {
+      // Small delay to ensure input is rendered
+      setTimeout(() => {
+        englishInputRef.current?.focus()
+      }, 100)
+    }
+  }, [showForm, editingCard])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setSubmitting(true)
 
     const cardData = {
       russianWord: formData.russianWord.trim(),
       englishWord: formData.englishWord.trim(),
       russianDescription: formData.russianDescription.trim() || undefined,
       englishDescription: formData.englishDescription.trim() || undefined,
+      groupName: formData.groupName.trim() || undefined,
     };
 
     console.log('[CARDS PAGE] Creating card:', cardData);
@@ -99,16 +143,24 @@ function CardsPageContent() {
         englishWord: '',
         russianDescription: '',
         englishDescription: '',
+        groupName: selectedGroup,
       })
       setShowForm(false)
       setShowDescriptions(false)
-      router.push('/cards')
-      fetchCards()
+      
+      // Show success toast
+      setToastMessage('Карточка добавлена!')
+      setTimeout(() => setToastMessage(null), 3000)
+      
+      // Refresh cards list
+      fetchCards(selectedGroup)
     } catch (err: any) {
       console.error('[CARDS PAGE] Error creating card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при создании карточки';
       console.error('[CARDS PAGE] Error message:', errorMessage);
       setError(errorMessage);
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -120,7 +172,7 @@ function CardsPageContent() {
     try {
       await apiClient.delete(`/api/cards/${id}`);
       console.log('[CARDS PAGE] Card deleted successfully');
-      fetchCards();
+      fetchCards(selectedGroup);
     } catch (err: any) {
       console.error('[CARDS PAGE] Error deleting card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при удалении карточки';
@@ -132,12 +184,14 @@ function CardsPageContent() {
     if (!editingCard) return
     e.preventDefault()
     setError('')
+    setSubmitting(true)
 
     const cardData = {
       russianWord: formData.russianWord.trim(),
       englishWord: formData.englishWord.trim(),
       russianDescription: formData.russianDescription.trim() || undefined,
       englishDescription: formData.englishDescription.trim() || undefined,
+      groupName: formData.groupName.trim() || undefined,
     };
 
     console.log('[CARDS PAGE] Updating card:', editingCard.id, cardData);
@@ -145,30 +199,41 @@ function CardsPageContent() {
     try {
       await apiClient.patch(`/api/cards/${editingCard.id}`, cardData);
       console.log('[CARDS PAGE] Card updated successfully');
+      
       setEditingCard(null)
       setFormData({
         russianWord: '',
         englishWord: '',
         russianDescription: '',
         englishDescription: '',
+        groupName: selectedGroup,
       })
       setShowDescriptions(false)
-      fetchCards()
+      
+      // Show success toast
+      setToastMessage('Карточка обновлена!')
+      setTimeout(() => setToastMessage(null), 3000)
+      
+      // Refresh cards list
+      fetchCards(selectedGroup)
     } catch (err: any) {
       console.error('[CARDS PAGE] Error updating card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при обновлении карточки';
       setError(errorMessage);
+    } finally {
+      setSubmitting(false)
     }
   }
 
   const startEdit = (card: Card) => {
     setEditingCard(card)
-    setFormData({
-      russianWord: card.russianWord,
-      englishWord: card.englishWord,
-      russianDescription: card.russianDescription || '',
-      englishDescription: card.englishDescription || '',
-    })
+      setFormData({
+        russianWord: card.russianWord,
+        englishWord: card.englishWord,
+        russianDescription: card.russianDescription || '',
+        englishDescription: card.englishDescription || '',
+        groupName: card.groupName || 'Мои карточки',
+      })
     setShowDescriptions(card.russianDescription !== undefined || card.englishDescription !== undefined)
     setShowForm(false)
   }
@@ -309,6 +374,12 @@ function CardsPageContent() {
 
   return (
     <div className={`container ${styles.cardsContainer}`}>
+      {toastMessage && (
+        <div className={styles.toast}>
+          <span className={styles.toastIcon}>✓</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
       <div className={styles.cardsContent}>
       {error && (
         <div className="card" style={{ background: '#fee', color: '#c00', marginBottom: '1rem' }}>
@@ -317,9 +388,84 @@ function CardsPageContent() {
       )}
 
       {(showForm || editingCard) && (
-        <div className="card" style={{ marginBottom: '2rem' }}>
+        <div className="card" style={{ marginBottom: '2rem', position: 'relative' }}>
           <h2 style={{ marginBottom: '1rem' }}>{editingCard ? 'Редактировать карточку' : 'Создать новую карточку'}</h2>
-          <form onSubmit={editingCard ? handleUpdate : handleSubmit}>
+          {submitting && (
+            <div className={styles.formLoadingOverlay}>
+              <div className={styles.formLoadingSpinner}></div>
+            </div>
+          )}
+          <form onSubmit={editingCard ? handleUpdate : handleSubmit} style={{ opacity: submitting ? 0.6 : 1, pointerEvents: submitting ? 'none' : 'auto' }}>
+            <div className="form-group">
+              <label htmlFor="groupName">Группа</label>
+              <select
+                id="groupName"
+                value={formData.groupName}
+                onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1.1rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  minHeight: '48px',
+                }}
+              >
+                {groups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Или введите новую группу..."
+                value={formData.groupName && !groups.includes(formData.groupName) ? formData.groupName : ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setFormData({ ...formData, groupName: e.target.value })
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  fontSize: '0.95rem',
+                  marginTop: '0.5rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  minHeight: '44px',
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="englishWord">English word *</label>
+              <input
+                type="text"
+                id="englishWord"
+                ref={englishInputRef}
+                value={formData.englishWord}
+                onChange={(e) => setFormData({ ...formData, englishWord: e.target.value })}
+                required
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1.2rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  minHeight: '52px',
+                }}
+              />
+            </div>
             <div className="form-group">
               <label htmlFor="russianWord">Русское слово *</label>
               <input
@@ -328,16 +474,17 @@ function CardsPageContent() {
                 value={formData.russianWord}
                 onChange={(e) => setFormData({ ...formData, russianWord: e.target.value })}
                 required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="englishWord">English word *</label>
-              <input
-                type="text"
-                id="englishWord"
-                value={formData.englishWord}
-                onChange={(e) => setFormData({ ...formData, englishWord: e.target.value })}
-                required
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1.2rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  minHeight: '52px',
+                }}
               />
             </div>
             
@@ -382,22 +529,60 @@ function CardsPageContent() {
               </>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="submit" className="btn btn-primary">
-                {editingCard ? 'Сохранить' : 'Создать'}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.75rem',
+              flexDirection: 'column',
+            }}>
+              <button 
+                type="submit" 
+                className={`btn btn-primary ${styles.cardsFormButton}`}
+                disabled={submitting}
+                style={{
+                  width: '100%',
+                  padding: '1.25rem',
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  minHeight: '56px',
+                  borderRadius: '12px',
+                  position: 'relative',
+                  opacity: submitting ? 0.7 : 1,
+                  cursor: submitting ? 'wait' : 'pointer',
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <span className={styles.loadingSpinner} style={{ marginRight: '0.5rem' }}></span>
+                    Сохранение...
+                  </>
+                ) : (
+                  editingCard ? 'Сохранить' : 'Создать'
+                )}
               </button>
-              <button type="button" className="btn" onClick={() => {
-                setShowForm(false)
-                setEditingCard(null)
-                setShowDescriptions(false)
-                setFormData({
-                  russianWord: '',
-                  englishWord: '',
-                  russianDescription: '',
-                  englishDescription: '',
-                })
-                router.push('/cards')
-              }}>
+              <button 
+                type="button" 
+                className={`btn ${styles.cardsFormButton}`} 
+                onClick={() => {
+                  setShowForm(false)
+                  setEditingCard(null)
+                  setShowDescriptions(false)
+                  setFormData({
+                    russianWord: '',
+                    englishWord: '',
+                    russianDescription: '',
+                    englishDescription: '',
+                    groupName: selectedGroup,
+                  })
+                  router.push('/cards')
+                }}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  fontSize: '1.1rem',
+                  minHeight: '48px',
+                  borderRadius: '12px',
+                }}
+              >
                 Отмена
               </button>
             </div>
@@ -410,7 +595,7 @@ function CardsPageContent() {
           <p>У вас пока нет карточек. Создайте первую!</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        <div className={styles.cardsGrid}>
           {cards.map((card) => {
             const swipeState = swipeStates[card.id] || { touchStart: null, swipeOffset: 0 }
             const swipeOffset = swipeState.swipeOffset
@@ -525,12 +710,34 @@ function CardsPageContent() {
           <button className={`btn btn-secondary ${styles.cardsBackButton}`} onClick={() => router.push('/')}>
             ←<span className={styles.cardsBackButtonText}> На главную</span>
           </button>
-          <div className={styles.cardsTitleWrapper}>
+          <div className={styles.cardsTitleWrapper} style={{ flex: 1, minWidth: 0 }}>
             <img src="/logo.png" alt="АБОБА" className={styles.cardsLogo} onError={(e) => { e.currentTarget.style.display = 'none' }} />
-            <h1 className={styles.cardsTitle}>Мои карточки</h1>
+            <select
+              value={selectedGroup}
+              onChange={(e) => setSelectedGroup(e.target.value)}
+              style={{
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '120px',
+                maxWidth: '100%',
+              }}
+            >
+              {groups.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}>
+        <button className={`btn btn-primary ${styles.cardsNewButton}`} onClick={() => setShowForm(!showForm)}>
           {showForm ? 'Отмена' : '+ Новая'}
         </button>
       </div>

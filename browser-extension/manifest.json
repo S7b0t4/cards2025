@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Telegraph Image Parser",
+  "version": "1.0.0",
+  "description": "Парсит список картинок со страниц telegra.ph прямо из браузера.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://telegra.ph/*",
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://telegra.ph/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+
+
+
+
+

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import TelegramBot from 'node-telegram-bot-api';
+const TelegramBot = require('node-telegram-bot-api');
 import { CardProgress } from './card-progress.model';
 import { Card } from './card.model';
 import { User } from '../users/user.model';
@@ -10,7 +10,7 @@ import { User } from '../users/user.model';
 @Injectable()
 export class TelegramNotificationsService {
   private readonly logger = new Logger(TelegramNotificationsService.name);
-  private bot: TelegramBot | null = null;
+  private bot: any = null;
 
   constructor(
     private configService: ConfigService,

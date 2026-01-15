@@ -21,6 +21,11 @@ export class UpdateCardDto {
   @IsOptional()
   @IsString()
   englishDescription?: string;
+
+  @ApiProperty({ example: 'Мои карточки', description: 'Card group name', required: false })
+  @IsOptional()
+  @IsString()
+  groupName?: string;
 }
 
 

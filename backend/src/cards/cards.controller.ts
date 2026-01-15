@@ -46,10 +46,10 @@ export class CardsController {
   @Get()
   @ApiOperation({ summary: 'Get all user cards' })
   @ApiResponse({ status: 200, description: 'Returns all cards for the user' })
-  findAll(@Request() req: any) {
-    this.logger.log(`GET /cards - User ID: ${req.user?.id}`);
+  findAll(@Request() req: any, @Query('group') group?: string) {
+    this.logger.log(`GET /cards - User ID: ${req.user?.id}, Group: ${group || 'all'}`);
     try {
-      return this.cardsService.findAll(req.user.id);
+      return this.cardsService.findAll(req.user.id, group);
     } catch (error) {
       this.logger.error(`GET /cards - Error: ${error.message}`, error.stack);
       throw error;
@@ -95,6 +95,19 @@ export class CardsController {
   @ApiResponse({ status: 200, description: 'Returns card statistics' })
   getStatistics(@Request() req: any) {
     return this.cardsService.getStatistics(req.user.id);
+  }
+
+  @Get('groups')
+  @ApiOperation({ summary: 'Get all card groups for user' })
+  @ApiResponse({ status: 200, description: 'Returns list of group names' })
+  getGroups(@Request() req: any) {
+    this.logger.log(`GET /cards/groups - User ID: ${req.user?.id}`);
+    try {
+      return this.cardsService.getGroups(req.user.id);
+    } catch (error) {
+      this.logger.error(`GET /cards/groups - Error: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   @Get(':id')
