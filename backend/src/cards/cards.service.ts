@@ -43,7 +43,7 @@ export class CardsService {
     return card;
   }
 
-  async findAll(userId: number, groupName?: string): Promise<Card[]> {
+  async findAll(userId: number, groupName?: string, limit?: number, offset?: number): Promise<{ cards: Card[]; total: number }> {
     const where: any = { userId };
     
     // Filter by group if specified
@@ -51,10 +51,16 @@ export class CardsService {
       where.groupName = groupName;
     }
     
-    return this.cardModel.findAll({
+    const total = await this.cardModel.count({ where });
+    
+    const cards = await this.cardModel.findAll({
       where,
       order: [['createdAt', 'DESC']],
+      limit: limit ? Math.min(limit, 100) : undefined, // Max 100 per request
+      offset: offset || 0,
     });
+    
+    return { cards, total };
   }
 
   // Get all unique group names for a user

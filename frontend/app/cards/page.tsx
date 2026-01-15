@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import apiClient from '../lib/axios-config'
+import { initDB, getCardsOffline, createCardOffline, updateCardOffline, deleteCardOffline, syncCards, onOnlineStatusChange } from '../lib/offline-sync'
 import styles from './cards.module.css'
 
 interface Card {
@@ -28,6 +29,11 @@ function CardsPageContent() {
   const [groups, setGroups] = useState<string[]>(['Мои карточки'])
   const [submitting, setSubmitting] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [totalCards, setTotalCards] = useState(0)
+  const [currentOffset, setCurrentOffset] = useState(0)
+  const cardsContainerRef = useRef<HTMLDivElement | null>(null)
   const [formData, setFormData] = useState({
     russianWord: '',
     englishWord: '',
@@ -39,14 +45,44 @@ function CardsPageContent() {
   const [swipeStates, setSwipeStates] = useState<Record<number, { touchStart: number | null; swipeOffset: number }>>({})
   // Ref for English input to focus on form open
   const englishInputRef = useRef<HTMLInputElement | null>(null)
+  // Ref for Russian input to focus after card creation
+  const russianInputRef = useRef<HTMLInputElement | null>(null)
 
-  const fetchCards = async (group?: string) => {
+  const fetchCards = async (group?: string, reset: boolean = true) => {
     try {
-      console.log('[CARDS PAGE] Fetching cards...', group ? `Group: ${group}` : 'All groups');
-      const url = group ? `/api/cards?group=${encodeURIComponent(group)}` : '/api/cards';
-      const response = await apiClient.get(url);
-      console.log('[CARDS PAGE] Cards fetched successfully:', response.data);
-      setCards(response.data);
+      if (reset) {
+        setLoading(true);
+        setCards([]);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      console.log('[CARDS PAGE] Fetching cards...', group ? `Group: ${group}` : 'All groups', reset ? '(reset)' : '(load more)');
+      
+      // Используем офлайн-функцию для получения карточек
+      const allCards = await getCardsOffline(group);
+      
+      // Применяем пагинацию
+      const offset = reset ? 0 : currentOffset;
+      const limit = 10;
+      const newCards = allCards.slice(offset, offset + limit);
+      const total = allCards.length;
+      
+      if (reset) {
+        setCards(newCards);
+        setCurrentOffset(newCards.length);
+        setHasMore(newCards.length < total);
+      } else {
+        setCards(prev => {
+          const updated = [...prev, ...newCards];
+          setCurrentOffset(updated.length);
+          setHasMore(updated.length < total);
+          return updated;
+        });
+      }
+      
+      setTotalCards(total);
     } catch (err: any) {
       console.error('[CARDS PAGE] Error fetching cards:', err);
       if (err.response?.status === 401) {
@@ -62,8 +98,15 @@ function CardsPageContent() {
       }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }
+
+  const loadMoreCards = useCallback(() => {
+    if (!loadingMore && hasMore && !loading) {
+      fetchCards(selectedGroup, false);
+    }
+  }, [selectedGroup, loadingMore, hasMore, loading])
 
   const fetchGroups = async () => {
     try {
@@ -81,40 +124,101 @@ function CardsPageContent() {
   }
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        router.push('/auth')
-        return
+    const initialize = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          router.push('/auth')
+          return
+        }
+        
+        // Инициализируем IndexedDB (не блокируем загрузку)
+        if (typeof window !== 'undefined' && 'indexedDB' in window) {
+          try {
+            await initDB()
+            console.log('[CARDS PAGE] IndexedDB initialized')
+          } catch (dbError) {
+            console.error('[CARDS PAGE] IndexedDB init error:', dbError)
+            // Продолжаем работу даже если IndexedDB не инициализировался
+          }
+        }
+        
+        // Синхронизируем данные при загрузке (не блокируем)
+        if (typeof window !== 'undefined' && 'indexedDB' in window) {
+          syncCards().catch((err) => {
+            console.log('[CARDS PAGE] Sync failed, using cached data:', err)
+          })
+        }
+        
+        // Check if we should open form from URL parameter
+        const shouldOpenForm = searchParams?.get('new') === 'true'
+        if (shouldOpenForm) {
+          setShowForm(true)
+        }
+        
+        // Загружаем группы и карточки
+        fetchGroups().then(() => {
+          fetchCards(selectedGroup)
+        })
+      } catch (err) {
+        console.error('[CARDS PAGE] Error in useEffect:', err)
+        setError('Произошла ошибка при загрузке страницы')
+        setLoading(false)
       }
-      // Check if we should open form from URL parameter
-      const shouldOpenForm = searchParams?.get('new') === 'true'
-      if (shouldOpenForm) {
-        setShowForm(true)
-      }
-      fetchGroups().then(() => {
-        fetchCards(selectedGroup)
-      })
-    } catch (err) {
-      console.error('[CARDS PAGE] Error in useEffect:', err)
-      setError('Произошла ошибка при загрузке страницы')
-      setLoading(false)
     }
+    
+    initialize()
+    
+    // Слушаем изменения онлайн статуса для синхронизации
+    const cleanup = onOnlineStatusChange(async (isOnline) => {
+      if (isOnline && typeof window !== 'undefined' && 'indexedDB' in window) {
+        try {
+          await syncCards()
+          fetchCards(selectedGroup, true)
+        } catch (err) {
+          console.error('[CARDS PAGE] Sync error:', err)
+        }
+      }
+    })
+    
+    return cleanup
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (selectedGroup) {
-      fetchCards(selectedGroup)
+      fetchCards(selectedGroup, true)
     }
   }, [selectedGroup])
 
-  // Focus English input when form opens
+  // Infinite scroll handler
   useEffect(() => {
-    if ((showForm || editingCard) && englishInputRef.current) {
-      // Small delay to ensure input is rendered
+    const container = cardsContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // Загружаем больше когда доскроллили до 200px от низа
+      if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !loadingMore && !loading) {
+        loadMoreCards();
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loadingMore, loading, loadMoreCards])
+
+  // Focus input when form opens
+  useEffect(() => {
+    if (editingCard && englishInputRef.current) {
+      // When editing, focus English input
       setTimeout(() => {
         englishInputRef.current?.focus()
+      }, 100)
+    } else if (showForm && russianInputRef.current) {
+      // When creating new card, focus Russian input
+      setTimeout(() => {
+        russianInputRef.current?.focus()
       }, 100)
     }
   }, [showForm, editingCard])
@@ -135,9 +239,11 @@ function CardsPageContent() {
     console.log('[CARDS PAGE] Creating card:', cardData);
 
     try {
-      const response = await apiClient.post('/api/cards', cardData);
-      console.log('[CARDS PAGE] Card created successfully:', response.data);
+      // Используем офлайн-функцию для создания карточки
+      const newCard = await createCardOffline(cardData);
+      console.log('[CARDS PAGE] Card created successfully:', newCard);
 
+      // Clear form data but keep form open
       setFormData({
         russianWord: '',
         englishWord: '',
@@ -145,15 +251,19 @@ function CardsPageContent() {
         englishDescription: '',
         groupName: selectedGroup,
       })
-      setShowForm(false)
       setShowDescriptions(false)
       
       // Show success toast
-      setToastMessage('Карточка добавлена!')
+      setToastMessage(newCard._offline ? 'Карточка добавлена (офлайн)!' : 'Карточка добавлена!')
       setTimeout(() => setToastMessage(null), 3000)
       
-      // Refresh cards list
-      fetchCards(selectedGroup)
+      // Refresh cards list (reset to first page)
+      fetchCards(selectedGroup, true)
+      
+      // Focus on Russian input for next card
+      setTimeout(() => {
+        russianInputRef.current?.focus()
+      }, 100)
     } catch (err: any) {
       console.error('[CARDS PAGE] Error creating card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при создании карточки';
@@ -170,9 +280,10 @@ function CardsPageContent() {
     console.log('[CARDS PAGE] Deleting card:', id);
 
     try {
-      await apiClient.delete(`/api/cards/${id}`);
+      // Используем офлайн-функцию для удаления карточки
+      await deleteCardOffline(id);
       console.log('[CARDS PAGE] Card deleted successfully');
-      fetchCards(selectedGroup);
+      fetchCards(selectedGroup, true);
     } catch (err: any) {
       console.error('[CARDS PAGE] Error deleting card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при удалении карточки';
@@ -197,7 +308,8 @@ function CardsPageContent() {
     console.log('[CARDS PAGE] Updating card:', editingCard.id, cardData);
 
     try {
-      await apiClient.patch(`/api/cards/${editingCard.id}`, cardData);
+      // Используем офлайн-функцию для обновления карточки
+      await updateCardOffline(editingCard.id, cardData);
       console.log('[CARDS PAGE] Card updated successfully');
       
       setEditingCard(null)
@@ -214,8 +326,8 @@ function CardsPageContent() {
       setToastMessage('Карточка обновлена!')
       setTimeout(() => setToastMessage(null), 3000)
       
-      // Refresh cards list
-      fetchCards(selectedGroup)
+      // Refresh cards list (reset to first page)
+      fetchCards(selectedGroup, true)
     } catch (err: any) {
       console.error('[CARDS PAGE] Error updating card:', err);
       const errorMessage = err.response?.data?.message || 'Ошибка при обновлении карточки';
@@ -380,7 +492,7 @@ function CardsPageContent() {
           <span>{toastMessage}</span>
         </div>
       )}
-      <div className={styles.cardsContent}>
+      <div className={styles.cardsContent} ref={cardsContainerRef}>
       {error && (
         <div className="card" style={{ background: '#fee', color: '#c00', marginBottom: '1rem' }}>
           {error}
@@ -471,6 +583,7 @@ function CardsPageContent() {
               <input
                 type="text"
                 id="russianWord"
+                ref={russianInputRef}
                 value={formData.russianWord}
                 onChange={(e) => setFormData({ ...formData, russianWord: e.target.value })}
                 required
@@ -700,6 +813,35 @@ function CardsPageContent() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {loadingMore && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          padding: '2rem',
+          gap: '0.75rem'
+        }}>
+          <div className={styles.loadingSpinner} style={{ 
+            width: '24px', 
+            height: '24px',
+            border: '3px solid rgba(102, 126, 234, 0.2)',
+            borderTopColor: '#667eea'
+          }}></div>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Загрузка карточек...</span>
+        </div>
+      )}
+
+      {!hasMore && cards.length > 0 && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '1.5rem',
+          color: 'var(--text-secondary)',
+          fontSize: '0.9rem'
+        }}>
+          Все карточки загружены ({cards.length} из {totalCards})
         </div>
       )}
       </div>

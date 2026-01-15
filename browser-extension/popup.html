@@ -145,6 +145,33 @@
       <div class="count-pill" id="countPill">0 картинок</div>
     </div>
 
+    <div style="margin-bottom: 8px; padding: 8px; background: #111827; border-radius: 6px; border: 1px solid #1f2937;">
+      <div style="font-size: 11px; color: #9ca3af; margin-bottom: 4px;">Папка для сохранения:</div>
+      <div style="display: flex; gap: 4px;">
+        <input 
+          type="text" 
+          id="folderInput" 
+          placeholder="Введите название папки..."
+          style="
+            flex: 1;
+            padding: 6px 8px;
+            background: #020617;
+            border: 1px solid #1f2937;
+            border-radius: 4px;
+            color: #e5e7eb;
+            font-size: 12px;
+            outline: none;
+          "
+        />
+        <button id="saveFolderBtn" style="width: auto; padding: 6px 12px; font-size: 11px;">Сохранить</button>
+      </div>
+      <div id="savedFolderInfo" style="margin-top: 4px; font-size: 10px; color: #6b7280; display: none;"></div>
+    </div>
+
+    <div style="margin-bottom: 8px; padding: 6px; background: rgba(37, 99, 235, 0.1); border-radius: 4px; border: 1px solid rgba(37, 99, 235, 0.3); font-size: 10px; color: #bfdbfe;">
+      ⚠️ Если браузер спрашивает куда сохранять каждый файл, отключите в настройках браузера "Всегда спрашивать, где сохранять файлы"
+    </div>
+
     <button id="parseBtn">Парсить картинки на странице</button>
     <button id="downloadBtn" class="secondary">Скачать все картинки в папку</button>
     <button id="copyBtn" class="secondary">Скопировать список URL</button>

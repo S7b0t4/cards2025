@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
   const progressDetails = document.getElementById('progressDetails');
+  const folderInput = document.getElementById('folderInput');
+  const saveFolderBtn = document.getElementById('saveFolderBtn');
+  const savedFolderInfo = document.getElementById('savedFolderInfo');
 
   function setStatus(message, type = 'info') {
     statusEl.textContent = message;
@@ -296,8 +299,53 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 
+  // Загружаем сохраненную папку
+  function loadSavedFolder() {
+    chrome.storage.local.get(['savedDownloadFolder'], (result) => {
+      if (result.savedDownloadFolder) {
+        folderInput.value = result.savedDownloadFolder;
+        savedFolderInfo.textContent = `Сохранено: ${result.savedDownloadFolder}`;
+        savedFolderInfo.style.display = 'block';
+        savedFolderInfo.style.color = '#22c55e';
+      }
+    });
+  }
+
+  // Сохраняем папку
+  saveFolderBtn.addEventListener('click', () => {
+    const folder = folderInput.value.trim();
+    if (!folder) {
+      setStatus('Введите название папки', 'error');
+      return;
+    }
+
+    // Очищаем название папки от недопустимых символов
+    const sanitizeFolder = (name) => {
+      return name
+        .replace(/[<>:"/\\|?*]/g, '') // Убираем недопустимые символы
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    };
+
+    const sanitized = sanitizeFolder(folder);
+    if (!sanitized) {
+      setStatus('Название папки содержит только недопустимые символы', 'error');
+      return;
+    }
+
+    chrome.storage.local.set({ savedDownloadFolder: sanitized }, () => {
+      folderInput.value = sanitized;
+      savedFolderInfo.textContent = `Сохранено: ${sanitized}`;
+      savedFolderInfo.style.display = 'block';
+      savedFolderInfo.style.color = '#22c55e';
+      setStatus('Папка сохранена!', 'success');
+    });
+  });
+
   // При открытии popup пробуем показать последние сохранённые данные
   loadFromStorage();
+  loadSavedFolder();
 });
 
 
