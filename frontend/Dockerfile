@@ -28,8 +28,9 @@ RUN npm ci --only=production
 # Копируем собранное приложение из builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/public ./public
+# next.config.js опционален, копируем только если существует
+COPY --from=builder /app/next.config.js* ./
 
 # Открываем порт
 EXPOSE 3003

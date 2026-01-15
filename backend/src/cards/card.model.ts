@@ -65,6 +65,15 @@ export class Card extends Model<Card> {
   })
   englishDescription?: string;
 
+  @ApiProperty({ example: 'Мои карточки', description: 'Card group name', required: false })
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: 'Мои карточки',
+    field: 'group_name',
+  })
+  groupName?: string;
+
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Created at' })
   @CreatedAt
   @Column({ field: 'created_at' })

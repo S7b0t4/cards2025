@@ -10,6 +10,7 @@ interface Statistics {
   dueCards: number
   recentlyReviewed: number
   activeDays: number
+  points: number
 }
 
 export default function Home() {
@@ -70,15 +71,25 @@ export default function Home() {
       <div className="container home-container">
         {/* Header with active days */}
         <div className="home-header">
-            <div className="home-logo-title">
+          <div className="home-logo-title">
             <div className="home-logo">
-              <img src="/logo.png" alt="АБОБА" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+              <img src="/logo.png" alt="Карточки" onError={(e) => { e.currentTarget.style.display = 'none' }} />
             </div>
-            <h1 className="home-title">АБОБА</h1>
+            <h1 className="home-title">Карточки</h1>
           </div>
-          <div className="active-days-badge">
-            <div className="active-days-number">{statistics?.activeDays || 0}</div>
-            <div className="active-days-label">активных дней</div>
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.75rem', 
+            alignItems: 'center'
+          }}>
+            <div className="active-days-badge">
+              <div className="active-days-number">{statistics?.activeDays || 0}</div>
+              <div className="active-days-label">активных дней</div>
+            </div>
+            <div className="points-badge">
+              <div className="points-number">{statistics?.points || 0}</div>
+              <div className="points-label">очков</div>
+            </div>
           </div>
         </div>
 
@@ -132,23 +143,25 @@ export default function Home() {
 
         {/* Main action buttons */}
         <div className="home-actions">
-          <button 
-            className="btn-action btn-action-practice"
-            onClick={() => router.push('/practice')}
-          >
-            <div className="btn-action-text">Практика</div>
-          </button>
+          <div className="home-actions-left">
+            <button 
+              className="btn-action btn-action-practice"
+              onClick={() => router.push('/practice')}
+            >
+              <div className="btn-action-text">Практика</div>
+            </button>
+            <button 
+              className="btn-action btn-action-cards"
+              onClick={() => router.push('/cards')}
+            >
+              <div className="btn-action-text">Мои карточки</div>
+            </button>
+          </div>
           <button 
             className="btn-action btn-action-add"
             onClick={() => router.push('/cards?new=true')}
           >
             <div className="btn-action-icon">+</div>
-          </button>
-          <button 
-            className="btn-action btn-action-cards"
-            onClick={() => router.push('/cards')}
-          >
-            <div className="btn-action-text">Мои карточки</div>
           </button>
         </div>
       </div>

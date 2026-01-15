@@ -89,6 +89,24 @@ services:
     #   - /app/.next
     # command: npm run dev
 
+  uno-bot:
+    build:
+      context: ./uno-bot
+      dockerfile: Dockerfile
+    container_name: uno_bot
+    env_file:
+      - uno-bot/.env
+    environment:
+      UNO_BOT_TOKEN: ${UNO_BOT_TOKEN:-8336559057:AAHtmyn93GYhjHQl9vczBem_NxnU4epaM0U}
+    networks:
+      - app-network
+    restart: unless-stopped
+    # Для разработки раскомментируйте volumes
+    # volumes:
+    #   - ./uno-bot/src:/app/src
+    #   - /app/node_modules
+    #   - /app/dist
+
 networks:
   app-network:
     driver: bridge

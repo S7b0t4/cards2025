@@ -99,6 +99,51 @@ export class CardProgress extends Model<CardProgress> {
   })
   lastReviewedDate?: Date;
 
+  @ApiProperty({ example: 10, description: 'Total number of correct answers' })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'correct_count',
+  })
+  correctCount: number;
+
+  @ApiProperty({ example: 3, description: 'Total number of incorrect answers' })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'incorrect_count',
+  })
+  incorrectCount: number;
+
+  @ApiProperty({ example: 5, description: 'Consecutive correct answers' })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'consecutive_correct',
+  })
+  consecutiveCorrect: number;
+
+  @ApiProperty({ example: 0, description: 'Consecutive incorrect answers' })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'consecutive_incorrect',
+  })
+  consecutiveIncorrect: number;
+
+  @ApiProperty({ example: 0.75, description: 'Success rate (correct / total)' })
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'success_rate',
+  })
+  successRate: number;
+
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z', description: 'Created at' })
   @CreatedAt
   @Column({ field: 'created_at' })
