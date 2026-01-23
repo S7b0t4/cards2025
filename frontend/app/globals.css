@@ -993,6 +993,15 @@ a {
   background: var(--bg-secondary);
 }
 
+.btn-action-typing {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .btn-action-typing {
+  background: var(--bg-secondary);
+}
+
 .btn-action-icon {
   font-size: 2rem;
   line-height: 1;
@@ -1194,7 +1203,17 @@ a {
   }
 
   .btn-action-text {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Make buttons smaller on mobile when there are 4 buttons */
+  .home-actions {
+    gap: 0.4rem;
+  }
+  
+  .btn-action {
+    padding: 0.75rem 0.5rem;
+    min-height: 55px;
   }
 }
 
@@ -1276,6 +1295,310 @@ div[data-telegram-login] span {
   font-size: 1rem;
   color: var(--text-primary);
   font-weight: 500;
+}
+
+/* Typing trainer styles */
+.typing-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.typing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.typing-header h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.typing-stats {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-item .stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.stat-item .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.typing-text-container {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px var(--shadow);
+  max-height: 6em; /* 3 lines * 2em line-height */
+  overflow-y: auto; /* Позволить прокрутку для автоскролла */
+  overflow-x: hidden;
+  position: relative;
+  word-break: keep-all; /* Не разрывать слова */
+  overflow-wrap: normal; /* Не переносить слова */
+  hyphens: none; /* Отключить автоматические переносы */
+  scroll-behavior: smooth; /* Плавная прокрутка */
+  /* Скрываем скроллбар, но оставляем возможность программного скролла */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE и Edge */
+}
+
+.typing-text-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.typing-text {
+  font-size: 1.5rem;
+  line-height: 2;
+  font-family: 'Courier New', monospace;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  width: 100%;
+  word-break: normal; /* Нормальный перенос слов */
+  overflow-wrap: break-word; /* Переносить только по пробелам, не разрывать слова */
+  word-spacing: normal;
+  hyphens: none; /* Отключить автоматические переносы */
+  text-indent: 0; /* Убрать отступы в начале строк */
+  /* Используем flex для контроля переносов */
+  display: inline;
+}
+
+.char {
+  transition: background-color 0.1s;
+}
+
+.char-pending {
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+.char-correct {
+  color: #4CAF50;
+  background: transparent;
+}
+
+.char-error {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+  text-decoration: underline;
+}
+
+.char-current {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.typing-input-container {
+  margin-bottom: 1rem;
+}
+
+.typing-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  font-size: 1.25rem;
+  font-family: 'Courier New', monospace;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.typing-input:focus {
+  border-color: #667eea;
+}
+
+.typing-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.typing-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.typing-actions .btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+.typing-results-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.typing-results {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.typing-results h2 {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.results-stats {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.result-item {
+  flex: 1;
+  min-width: 100px;
+}
+
+.result-value {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.result-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.results-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.results-actions .btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+/* Mobile responsive for typing trainer */
+@media (max-width: 768px) {
+  .typing-container {
+    padding: 0.5rem;
+  }
+
+  .typing-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .typing-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .typing-stats {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .stat-item .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-item .stat-label {
+    font-size: 0.65rem;
+  }
+
+  .typing-text-container {
+    padding: 1rem;
+    min-height: 150px;
+  }
+
+  .typing-text {
+    font-size: 1.25rem;
+    line-height: 1.75;
+  }
+
+  .typing-input {
+    font-size: 1rem;
+    min-height: 100px;
+  }
+
+  .typing-actions {
+    flex-direction: column;
+  }
+
+  .typing-actions .btn {
+    width: 100%;
+  }
+
+  .results-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .result-item {
+    min-width: auto;
+  }
+
+  .result-value {
+    font-size: 1.5rem;
+  }
+
+  .results-actions {
+    flex-direction: column;
+  }
+
+  .results-actions .btn {
+    width: 100%;
+  }
 }
 
 

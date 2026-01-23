@@ -404,7 +404,7 @@ function CardsPageContent() {
       handleDelete(cardId)
     } else if (isLeftSwipe) {
       // Swipe left = edit
-      const card = cards.find(c => c.id === cardId)
+      const card = Array.isArray(cards) ? cards.find(c => c.id === cardId) : null
       if (card) {
         startEdit(card)
       }
@@ -460,7 +460,7 @@ function CardsPageContent() {
     if (isRightSwipe) {
       handleDelete(cardId)
     } else if (isLeftSwipe) {
-      const card = cards.find(c => c.id === cardId)
+      const card = Array.isArray(cards) ? cards.find(c => c.id === cardId) : null
       if (card) {
         startEdit(card)
       }
@@ -703,7 +703,7 @@ function CardsPageContent() {
         </div>
       )}
 
-      {cards.length === 0 ? (
+      {!Array.isArray(cards) || cards.length === 0 ? (
         <div className="card">
           <p>У вас пока нет карточек. Создайте первую!</p>
         </div>

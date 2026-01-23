@@ -143,20 +143,24 @@ export default function Home() {
 
         {/* Main action buttons */}
         <div className="home-actions">
-          <div className="home-actions-left">
-            <button 
-              className="btn-action btn-action-practice"
-              onClick={() => router.push('/practice')}
-            >
-              <div className="btn-action-text">Практика</div>
-            </button>
-            <button 
-              className="btn-action btn-action-cards"
-              onClick={() => router.push('/cards')}
-            >
-              <div className="btn-action-text">Мои карточки</div>
-            </button>
-          </div>
+          <button 
+            className="btn-action btn-action-practice"
+            onClick={() => router.push('/practice')}
+          >
+            <div className="btn-action-text">Практика</div>
+          </button>
+          <button 
+            className="btn-action btn-action-cards"
+            onClick={() => router.push('/cards')}
+          >
+            <div className="btn-action-text">Мои карточки</div>
+          </button>
+          <button 
+            className="btn-action btn-action-typing"
+            onClick={() => router.push('/typing')}
+          >
+            <div className="btn-action-text">Тренажер</div>
+          </button>
           <button 
             className="btn-action btn-action-add"
             onClick={() => router.push('/cards?new=true')}

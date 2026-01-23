@@ -2,7 +2,10 @@
 
 import apiClient from './axios-config';
 import * as db from './indexeddb';
-import { isIndexedDBAvailable } from './indexeddb';
+import { isIndexedDBAvailable, initDB } from './indexeddb';
+
+// Re-export initDB for convenience
+export { initDB };
 
 interface Card {
   id: number;

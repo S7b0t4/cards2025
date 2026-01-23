@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CardsModule } from './cards/cards.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TypingModule } from './typing/typing.module';
 import { DatabaseConfig } from './config/database.config';
 // Импортируем все модели для явной регистрации
 import { User } from './users/user.model';
@@ -41,6 +42,7 @@ import { AuthCode } from './auth/auth-code.model';
     AuthModule,
     CardsModule,
     TasksModule,
+    TypingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
